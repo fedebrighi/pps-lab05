@@ -24,8 +24,16 @@ trait Vector2D:
   def magnitude: Double
 
 object Vector2D:
+
+  case class Vector2DImpl(x: Double, y: Double) extends Vector2D:
+    override def +(other: Vector2D): Vector2D = Vector2DImpl(x + other.x, y + other.y)
+    override def -(other: Vector2D): Vector2D = Vector2DImpl(x - other.x, y - other.y)
+    override def *(scalar: Double): Vector2D = Vector2DImpl(scalar * x, scalar * y)
+    override def dot(other: Vector2D): Double = x * other.x + y * other.y
+    override def magnitude: Double = sqrt(x * x + y * y)
+
   // Factory method to create Vector2D instances
-  def apply(x: Double, y: Double): Vector2D = ???
+  def apply(x: Double, y: Double): Vector2D = Vector2DImpl(x,y)
 
   // Common vectors (optional but nice)
   val zero: Vector2D = apply(0.0, 0.0)
@@ -41,8 +49,11 @@ object Vector2D:
  *   - Observe how equality (==) and toString now work correctly out-of-the-box.
  */
 @main def checkVectors(): Unit =
-  val v1 = Vector2D(3.0, 4.0)
-  val v2 = Vector2D(-1.0, 2.0)
+
+  import Vector2D.*
+
+  val v1: Vector2D = Vector2DImpl(3.0, 4.0)
+  val v2: Vector2D = Vector2DImpl(-1.0, 2.0)
 
   val sum = v1 + v2
   // Expected: (3 + (-1), 4 + 2) = (2.0, 6.0)
@@ -58,6 +69,7 @@ object Vector2D:
 
   val dotProduct = v1.dot(v2)
   // Expected: 3*(-1) + 4*2 = -3 + 8 = 5.0
+  // Expected: 3*(-1) + 4*2 = -3 + 8 = 5.0
   println(s"Dot Product: $dotProduct")
 
   val magV1 = v1.magnitude
@@ -69,10 +81,10 @@ object Vector2D:
   println(s"Magnitude of v2: $magV2") // Check if close to 2.236
 
   // Check zero vector and unit vectors if implemented in companion object
-  // println(s"Zero vector: ${Vector2D.zero}")
-  // println(s"Dot product v1.dot(Vector2D.i): ${v1.dot(Vector2D.i)}") // Should be v1.x = 3.0
+  println(s"Zero vector: ${Vector2D.zero}")
+  println(s"Dot product v1.dot(Vector2D.i): ${v1.dot(Vector2D.i)}") // Should be v1.x = 3.0
 
-  val multipleOps = (v1 + v2) * 3.0 - Vector2D(1.0, 1.0)
+  val multipleOps: Vector2D = (v1 + v2) * 3.0 - Vector2DImpl(1.0, 1.0)
   // sum = (2.0, 6.0)
   // sum * 3.0 = (6.0, 18.0)
   // (6.0, 18.0) - (1.0, 1.0) = (5.0, 17.0)

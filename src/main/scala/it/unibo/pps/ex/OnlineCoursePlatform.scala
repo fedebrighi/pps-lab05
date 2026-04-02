@@ -1,7 +1,11 @@
 package it.unibo.pps.ex
 
+import it.unibo.pps.ex.Course.CourseImpl
+import it.unibo.pps.ex.OnlineCoursePlatform.OnlineCoursePlatformImpl
 import it.unibo.pps.util.Optionals.Optional
-import it.unibo.pps.util.Sequences.* // Assuming Sequence and related methods are here
+import it.unibo.pps.util.Optionals.Optional.{Empty, Just}
+import it.unibo.pps.util.Sequences.*
+import it.unibo.pps.util.Sequences.Sequence.{Cons, empty} // Assuming Sequence and related methods are here
 
 // Represents a course offered on the platform
 trait Course:
@@ -11,8 +15,10 @@ trait Course:
   def category: String // e.g., "Programming", "Data Science", "Design"
 
 object Course:
+  case class CourseImpl(courseId: String, title: String, instructor: String, category: String) extends Course
   // Factory method for creating Course instances
-  def apply(courseId: String, title: String, instructor: String, category: String): Course = ???
+  def apply(courseId: String, title: String, instructor: String, category: String): Course = CourseImpl(courseId, title, instructor, category)
+
 /**
  * Manages courses and student enrollments on an online learning platform.
  */
@@ -82,11 +88,48 @@ trait OnlineCoursePlatform:
    */
   def isStudentEnrolled(studentId: String, courseId: String): Boolean
 
-end OnlineCoursePlatform
-
 object OnlineCoursePlatform:
+
+  class OnlineCoursePlatformImpl() extends OnlineCoursePlatform:
+
+    private var courses: Sequence[Course] = Sequence.empty
+    private var studentEnrollments: Sequence[(String,String)] = Sequence.empty
+
+    override def isCourseAvailable(courseId: String): Boolean =
+      !courses.find(_.courseId == courseId).isEmpty
+
+    override def addCourse(course: Course): Unit =
+      courses = Cons(course, courses)
+
+    override def findCoursesByCategory(category: String): Sequence[Course] =
+      courses.filter(_.category == category)
+
+    override def getCourse(courseId: String): Optional[Course] =
+      courses.find(_.courseId == courseId)
+
+    override def removeCourse(course: Course): Unit =
+      courses = courses.filter(_ != course)
+
+    override def isStudentEnrolled(studentId: String, courseId: String): Boolean =
+      studentEnrollments.contains(studentId, courseId)
+
+    override def enrollStudent(studentId: String, courseId: String): Unit =
+      if !isStudentEnrolled(studentId, courseId) then
+        studentEnrollments = Cons((studentId, courseId),studentEnrollments)
+
+    override def getStudentEnrollments(studentId: String): Sequence[Course] =
+      val studentCourseIds = studentEnrollments
+        .filter((sid, _) => sid == studentId)
+        .map((_, cid) => cid)
+        courses.filter(c => studentCourseIds.contains(c.courseId))
+
+
+    override def unenrollStudent(studentId: String, courseId: String): Unit =
+      if isStudentEnrolled(studentId, courseId) then
+        studentEnrollments = studentEnrollments.filter(_ != (studentId,courseId))
+
   // Factory method for creating an empty platform instance
-  def apply(): OnlineCoursePlatform = ??? // Fill Here!
+  def apply(): OnlineCoursePlatform =  OnlineCoursePlatformImpl()// Fill Here!
 
 /**
  * Represents an online learning platform that offers courses and manages student enrollments.
@@ -102,11 +145,11 @@ object OnlineCoursePlatform:
  *
  */
 @main def mainPlatform(): Unit =
-  val platform = OnlineCoursePlatform()
+  val platform: OnlineCoursePlatform = OnlineCoursePlatformImpl()
 
-  val scalaCourse = Course("SCALA01", "Functional Programming in Scala", "Prof. Odersky", "Programming")
-  val pythonCourse = Course("PYTHON01", "Introduction to Python", "Prof. van Rossum", "Programming")
-  val designCourse = Course("DESIGN01", "UI/UX Design Fundamentals", "Prof. Norman", "Design")
+  val scalaCourse = CourseImpl("SCALA01", "Functional Programming in Scala", "Prof. Odersky", "Programming")
+  val pythonCourse = CourseImpl("PYTHON01", "Introduction to Python", "Prof. van Rossum", "Programming")
+  val designCourse = CourseImpl("DESIGN01", "UI/UX Design Fundamentals", "Prof. Norman", "Design")
 
   println(s"Is SCALA01 available? ${platform.isCourseAvailable(scalaCourse.courseId)}") // false
   platform.addCourse(scalaCourse)
@@ -125,7 +168,9 @@ object OnlineCoursePlatform:
   val studentAlice = "Alice123"
   val studentBob = "Bob456"
 
+
   println(s"Is Alice enrolled in SCALA01? ${platform.isStudentEnrolled(studentAlice, "SCALA01")}") // false
+
   platform.enrollStudent(studentAlice, "SCALA01")
   println(s"Is Alice enrolled in SCALA01? ${platform.isStudentEnrolled(studentAlice, "SCALA01")}") // true
   platform.enrollStudent(studentAlice, "DESIGN01")
@@ -142,4 +187,3 @@ object OnlineCoursePlatform:
   platform.removeCourse(pythonCourse)
   println(s"Is PYTHON01 available? ${platform.isCourseAvailable(pythonCourse.courseId)}") // false
   println(s"Programming courses: ${platform.findCoursesByCategory("Programming")}") // Sequence(scalaCourse)
-
