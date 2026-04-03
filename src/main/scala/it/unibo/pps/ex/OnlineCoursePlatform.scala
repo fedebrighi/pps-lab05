@@ -3,9 +3,8 @@ package it.unibo.pps.ex
 import it.unibo.pps.ex.Course.CourseImpl
 import it.unibo.pps.ex.OnlineCoursePlatform.OnlineCoursePlatformImpl
 import it.unibo.pps.util.Optionals.Optional
-import it.unibo.pps.util.Optionals.Optional.{Empty, Just}
 import it.unibo.pps.util.Sequences.*
-import it.unibo.pps.util.Sequences.Sequence.{Cons, empty} // Assuming Sequence and related methods are here
+import it.unibo.pps.util.Sequences.Sequence.Cons // Assuming Sequence and related methods are here
 
 // Represents a course offered on the platform
 trait Course:
@@ -131,6 +130,15 @@ object OnlineCoursePlatform:
   // Factory method for creating an empty platform instance
   def apply(): OnlineCoursePlatform =  OnlineCoursePlatformImpl()// Fill Here!
 
+object sameCategory:
+  def unapply(courses: Sequence[Course]): Option[String] =
+    courses match
+      case Cons(h, t) =>
+        val category = h.category
+        if courses.find(_.category != category).isEmpty then Some(category)
+        else None
+      case _ => None
+
 /**
  * Represents an online learning platform that offers courses and manages student enrollments.
  * Hints:
@@ -187,3 +195,16 @@ object OnlineCoursePlatform:
   platform.removeCourse(pythonCourse)
   println(s"Is PYTHON01 available? ${platform.isCourseAvailable(pythonCourse.courseId)}") // false
   println(s"Programming courses: ${platform.findCoursesByCategory("Programming")}") // Sequence(scalaCourse)
+
+  // Same Category
+
+  val programmingCourses = platform.findCoursesByCategory("Programming")
+  val allCourses = platform.findCoursesByCategory("Programming").filter(_ => true)
+
+  programmingCourses match
+    case sameCategory(cat) => println(s"Programming courses all in category: $cat")
+    case _ => println(s"Programming courses have different categories")
+
+  Cons(scalaCourse, Cons(designCourse, Sequence.empty)) match
+    case sameCategory(cat) => println(s"Mixed courses all in category: $cat")
+    case _ => println(s"Mixed courses have different categories")
